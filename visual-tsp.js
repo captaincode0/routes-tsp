@@ -34,7 +34,7 @@ var MSG_SEND_INTERVAL_MIDDLE = 500;
 var MSG_SEND_INTERVAL_HIGH = 1000;
 
 var CANVAS_DIMENSION_PXLS = 700;
-var DEFAULT_WS_ADDRESS = "ws://"+document.location.host+"9999/tsp";
+var DEFAULT_WS_ADDRESS = "wss://"+document.location.host+"9999/tsp";
 
 var CB_ID_1 = 0; // checkbox identifier
 var CB_ID_2 = 1; // checkbox identifier
