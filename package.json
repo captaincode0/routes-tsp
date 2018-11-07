@@ -16,5 +16,10 @@
   "bugs": {
     "url": "https://github.com/captaincode0/routes-tsp/issues"
   },
-  "homepage": "https://github.com/captaincode0/routes-tsp#readme"
+  "homepage": "https://github.com/captaincode0/routes-tsp#readme",
+  "dependencies": {
+    "express": "^4.13.4",
+    "express-ws": "^2.0.0-beta",
+    "permutation-engine": "^0.1.5"
+  }
 }
