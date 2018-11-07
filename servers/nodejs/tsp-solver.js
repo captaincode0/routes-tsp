@@ -2,12 +2,19 @@ var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
 var permutationEngine = require('permutation-engine');
+var path = require("path");
 
 app.use(express.static('public'));
 
 app.listen(9999, function () {
   console.log('Server listening on port 9999');
 });
+
+app.get("/", function(req, res){
+  res.sendFile(path.join(__dirname+"/../../index.html"));
+});
+
+app.use(express.static('../../'));
 
 app.ws('/tsp', function(ws, req) {
   ws.on('message', function(msg) {
