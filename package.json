@@ -1,0 +1,20 @@
+{
+  "name": "routes-tsp",
+  "version": "1.0.0",
+  "description": "Visual-TSP - a web application for [travelling salesman problem](https://en.wikipedia.org/wiki/Travelling_salesman_problem) visualization and solving.",
+  "main": "servers/nodejs/tsp-solver.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node servers/nodejs/tsp-solver.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/captaincode0/routes-tsp.git"
+  },
+  "author": "captaincode0",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/captaincode0/routes-tsp/issues"
+  },
+  "homepage": "https://github.com/captaincode0/routes-tsp#readme"
+}

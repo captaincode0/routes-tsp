@@ -10,14 +10,14 @@
 <SCRIPT type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></SCRIPT>
 <SCRIPT type="text/javascript" src="permutation-engine.js"></SCRIPT>
 <SCRIPT type="text/javascript" src="visual-tsp.js"></SCRIPT>
-<TITLE>Visual TSP</TITLE>
+<TITLE>Solucionador de rutas</TITLE>
 </HEAD>
 
 <body onload="init()" onhashchange="hashChanged()">
   <div id="container">
     <div id="inner_container_left">
       <canvas id="myCanvas" width="700" height="700">
-      Your browser does not support the HTML5 canvas tag.
+      Tu navegador no soporta canvas.
       </canvas>
     </div>
     <div id="inner_container_right">
@@ -27,7 +27,7 @@
       </div>
       <div id="connection_container">
         <div id="connection_container_upper">
-          Server address:
+          Dirección del servidor web:
           <input type="text" id="socket_server_address" oninput="closeWebSocket()">
         </div>
         <div id="connection_container_lower">
@@ -39,7 +39,7 @@
       <div id="checkbox_container">
         <label>
           <input type="checkbox" id="client_side_cb" onchange="cbChanged()">
-          Client side route calculation
+          Cálculo de las rutas por este cliente web
         </label>
       </div>
     </div>
