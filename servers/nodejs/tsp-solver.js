@@ -4,7 +4,7 @@ var expressWs = require('express-ws')(app);
 var permutationEngine = require('permutation-engine');
 var path = require("path");
 
-app.use(express.static('public'));
+app.use(express.static('../../'));
 
 app.listen(process.env.PORT, function () {
   console.log('Server listening on port '+process.env.PORT);
@@ -13,8 +13,6 @@ app.listen(process.env.PORT, function () {
 app.get("/", function(req, res){
   res.sendFile(path.join(__dirname+"/../../index.html"));
 });
-
-app.use(express.static('../../'));
 
 app.ws('/tsp', function(ws, req) {
   ws.on('message', function(msg) {
