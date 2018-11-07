@@ -6,8 +6,8 @@ var path = require("path");
 
 app.use(express.static('public'));
 
-app.listen(9999, function () {
-  console.log('Server listening on port 9999');
+app.listen(process.env.PORT, function () {
+  console.log('Server listening on port '+process.env.PORT);
 });
 
 app.get("/", function(req, res){
