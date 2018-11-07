@@ -1,1 +1,1 @@
-web: nodejs/servers/tsp-solver.js
+web: servers/nodejs/tsp-solver.js
