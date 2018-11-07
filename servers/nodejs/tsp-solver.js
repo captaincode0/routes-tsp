@@ -6,8 +6,8 @@ var path = require("path");
 
 app.use(express.static(path.join(__dirname+"/../../")));
 
-app.listen(process.env.PORT || 9999, function () {
-  console.log('Server listening on port '+ (process.env.PORT || 9999));
+app.listen(9999, function () {
+  console.log('Server listening on port '+ ( 9999));
 });
 
 app.get("/", function(req, res){
