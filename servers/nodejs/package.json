@@ -1,0 +1,9 @@
+{
+  "name": "tsp-solver",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.13.4",
+    "express-ws": "^2.0.0-beta",
+    "permutation-engine": "^0.1.5"
+  }
+}

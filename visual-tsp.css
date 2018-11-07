@@ -1,0 +1,150 @@
+body{
+  display: inline;
+  font-family: Arial,Helvetica Neue,Helvetica,sans-serif;
+}
+
+#container{
+  position:absolute;
+  margin:auto;
+  left:0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width:1450px;
+  height:730px;
+}
+
+#myCanvas{
+  position:absolute;
+  background-color:#FFFFFF;
+  border:2px solid #000000;
+  margin:auto;
+  display:block;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+}
+
+#inner_container_left{
+  position:relative;
+  height:720px;
+  width:720px;
+  background-color:#d9ffff;
+  display:inline;
+  float:left;
+}
+
+#inner_container_right{
+  position:relative;
+  height:720px;
+  width:720px;
+  background-color:#d9ffff;
+  display:inline;
+  float:right;
+}
+
+#sub_container{
+  position:relative;
+  display:inline;
+  float:left;
+  margin-top:10px;
+  margin-left:10px;   
+}
+
+#coords_container{
+  width:380px;
+  height:550px;
+  background-color:#ffffff;
+  display:inline;
+  float:right;
+  padding-left:20px;
+  padding-top:10px;
+  margin-right:20px;
+}
+
+#coords_container input[type="text"]{
+position: relative;
+top: 50%;
+transform: translateY(-50%);
+width: 35px;
+border: 2px solid #999;
+padding-left: 3px; 
+box-sizing: border-box;
+margin-right: 3px;
+}
+
+#rcoordslist{
+  position:relative;
+  width:100px;
+  height:30px;
+}
+
+.rtest input{
+  background-color:#000000;
+  color:#ffffff;
+}
+
+#coords_container .destroy {
+
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  float:right;
+  display: inline;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  background: url(destroy.png) no-repeat;
+}
+
+#coords_container .destroy:hover {
+  background-position: 0 -20px;
+}
+
+.rhide {
+  display:none;  
+}
+
+#connect_button{
+display: none;
+}
+
+#clear_button{
+position: absolute;
+bottom: 20px;
+left: 40px;
+}
+
+#checkbox_container{
+position: absolute;
+bottom: 20px;
+left: 200px;
+/*background-color: #99ffff;*/
+}
+
+#connection_container{
+float:left;
+position:relative;
+margin-top:15px;
+margin-left:20px;
+}
+
+#connection_container_upper{
+height:30px;
+padding:5px;
+}
+
+#connection_container_lower{
+height:30px;
+padding:5px;
+}
+
+#socket_server_address{
+width:250px;
+}
+
+.r_invert_colors input{
+  background-color:#000000;
+  color:#ffffff;
+}

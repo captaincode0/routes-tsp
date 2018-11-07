@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<HEAD lang="en">
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="visual-tsp.css">
+<SCRIPT type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.1/react.min.js"></SCRIPT>
+<SCRIPT type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.1/react-dom.min.js"></SCRIPT>
+<SCRIPT type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/redux/3.4.0/redux.min.js"></SCRIPT>
+<SCRIPT type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ocanvas/2.8.3/ocanvas.min.js"></SCRIPT>
+<SCRIPT type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></SCRIPT>
+<SCRIPT type="text/javascript" src="permutation-engine.js"></SCRIPT>
+<SCRIPT type="text/javascript" src="visual-tsp.js"></SCRIPT>
+<TITLE>Visual TSP</TITLE>
+</HEAD>
+
+<body onload="init()" onhashchange="hashChanged()">
+  <div id="container">
+    <div id="inner_container_left">
+      <canvas id="myCanvas" width="700" height="700">
+      Your browser does not support the HTML5 canvas tag.
+      </canvas>
+    </div>
+    <div id="inner_container_right">
+      <div id="sub_container">
+        <div id="coords_container">
+        </div>
+      </div>
+      <div id="connection_container">
+        <div id="connection_container_upper">
+          Server address:
+          <input type="text" id="socket_server_address" oninput="closeWebSocket()">
+        </div>
+        <div id="connection_container_lower">
+          <span id="websocket_status"></span>
+          <input type="button" id="connect_button" value="Connect" onclick="openWebSocket()">
+        </div>
+      </div>      
+      <input type="button" id="clear_button" value="Clear all" onclick="clearAllButton()">
+      <div id="checkbox_container">
+        <label>
+          <input type="checkbox" id="client_side_cb" onchange="cbChanged()">
+          Client side route calculation
+        </label>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
