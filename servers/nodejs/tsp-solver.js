@@ -4,10 +4,10 @@ var expressWs = require('express-ws')(app);
 var permutationEngine = require('permutation-engine');
 var path = require("path");
 
-app.use(express.static('../../'));
+app.use(express.static(path.join(__dirname+"/../../")));
 
-app.listen(process.env.PORT, function () {
-  console.log('Server listening on port '+process.env.PORT);
+app.listen(process.env.PORT || 9999, function () {
+  console.log('Server listening on port '+ (process.env.PORT || 9999));
 });
 
 app.get("/", function(req, res){
