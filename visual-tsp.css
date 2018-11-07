@@ -30,7 +30,7 @@ body{
   position:relative;
   height:720px;
   width:720px;
-  background-color:#d9ffff;
+  background-color:#efefefef;
   display:inline;
   float:left;
 }
@@ -39,7 +39,7 @@ body{
   position:relative;
   height:720px;
   width:720px;
-  background-color:#d9ffff;
+  background-color:#efefef;
   display:inline;
   float:right;
 }
@@ -76,8 +76,18 @@ margin-right: 3px;
 
 #rcoordslist{
   position:relative;
-  width:100px;
+  width:300px;
   height:30px;
+}
+
+#rcoordslist .client-input{
+  width: 100px !important;
+}
+
+#rcoordslist b{
+  margin-top: 7px;
+  float: left;
+  margin-right: 10px;
 }
 
 .rtest input{

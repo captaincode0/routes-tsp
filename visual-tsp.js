@@ -7,10 +7,10 @@ var g_coords_table = [];
 var g_coords_table_prev = [];
 var g_interval_handle_stack = [];
 var g_web_socket;
-var g_canvasNodeRadius = 9;
-var g_canvasNodeFill = "#f00";
+var g_canvasNodeRadius = 12;
+var g_canvasNodeFill = "#4D7FAE";
 var g_mouseOnIndicatorRadius = 12;
-var g_mouseOnStrokeParams = "5px #0aa";
+var g_mouseOnStrokeParams = "5px #E08547";
 var g_shortestRoute = [];
 var g_2ndShortestRoute = [];
 var g_first;
@@ -20,7 +20,7 @@ var g_RCOORDS = []; //React
 var g_RPATHS = []; //React
 var g_canvas;
 var RInst; //React instance
-var g_instructions = "Visual TSP by Jussi Utunen\nInstructions:\n\nSingle click adds a node.\nDouble click on node deletes it.\nClick and drag on node to move it.\nNode can be moved also by editing its coordinate values.\nCanvas visible area is 700 x 700 pixels.\nMaximum count of nodes is 9.";
+var g_instructions = "Resolvedor de rutas\nInstrucciones:\n\nUn solo clic añade un nodo.\nDos clics elimiman un nodo.\nMantener presionado y arrastrar para reposicionar.\nLos nodos pueden ser movidos y editados por las coordenadas manualmente.\nEl área visible es de 700x700 pixeles.\nLos nodos máximos que se pueden agregar son 9.";
 var g_client_side_path_calculation;
 
 var g_store;
@@ -264,6 +264,8 @@ function init() {
         return React.createElement(
           "div",
           { className: klass, id: "rcoordslist", key: item.id, onMouseLeave: this.handleOnMouseLeave.bind(this, item.id), onMouseEnter: this.handleOnMouseEnter.bind(this, item.id) },
+          React.createElement("b", {}, item.id+". "),
+          React.createElement("input", {type: "text", placeholder: "Cliente "+item.id, className: "client-input"}),
           React.createElement("input", { type: "text", onChange: this.handleOnChangeX.bind(this, item.id), value: item.x }),
           React.createElement("input", { type: "text", onChange: this.handleOnChangeY.bind(this, item.id), value: item.y }),
           React.createElement("a", { className: "destroy", onClick: this.handleOnClick.bind(this, item.id) })
@@ -346,7 +348,7 @@ function callReactRefPaths() {
   var lengths = [calculateRouteLength(g_shortestRoute), calculateRouteLength(g_2ndShortestRoute)];
   var checkeds = [state.checkboxes[0], state.checkboxes[1]];
   var pids = [0, 1];
-  var strings = ["Show shortest path", "Show 2nd shortest path"];
+  var strings = ["Mostrar ruta más corta", "Mostrar segunda ruta más corta"];
 
   g_RPATHS.length = 0;
 
@@ -359,7 +361,7 @@ function callReactRefPaths() {
 
 function addCanvasNodeTouch() {
   if (g_node_count > g_maxNodeCount - 1) {
-    var obj = new textParamsObject("Maximum count of nodes reached!");
+    var obj = new textParamsObject("Se permite un máximo de 9 nodos");
     displayTextOnCanvas(obj, 2500);
     return;
   }
@@ -377,7 +379,7 @@ function addCanvasNodeTouch() {
 
 function addCanvasNodeMouse() {
   if (g_node_count > g_maxNodeCount - 1) {
-    var obj = new textParamsObject("Maximum count of nodes reached!");
+    var obj = new textParamsObject("Se permite un máximo de 9 nodos");
     displayTextOnCanvas(obj, 2500);
     return;
   }
@@ -441,10 +443,12 @@ function drawSurroundingEllipse(target) {
     x: 0,
     y: 0,
     radius: g_mouseOnIndicatorRadius,
-    stroke: g_mouseOnStrokeParams
+    stroke: g_mouseOnStrokeParams,
+    zIndex: "back"
   });
 
   target.addChild(ellipse);
+  addTextOnEllipse(target, target.model_id);
 }
 
 function drawSurroundingEllipseById(id) {
@@ -579,6 +583,13 @@ function removeLinesFromCanvas() {
       --index;
     }
   }
+
+  for (index = 0; index < g_canvas.children.length; index++) {
+    if (g_canvas.children[index].type === 'text') {
+      g_canvas.removeChild(g_canvas.children[index]);
+      --index;
+    }
+  }
 }
 
 function openWebSocket() {
@@ -620,7 +631,7 @@ function checkWebSocketState() {
   var state = g_web_socket.readyState;
 
   if (state === 1) {
-    $('#websocket_status').html("Connection status: Connected");
+    $('#websocket_status').html("Estado de la conexión: Conectado");
     if ($("#connect_button").css("display") === 'inline') {
       g_coords_table.length = 0;
       coordsHandler();
@@ -631,7 +642,7 @@ function checkWebSocketState() {
       localStorage.setItem("stored_ws_address", g_web_socket.url.toLowerCase().trim());
     }
   } else if (state === 3) {
-    $('#websocket_status').html('Connection status: Disconnected');
+    $('#websocket_status').html('Estado de la conexión: Desconectado');
     $("#connect_button").css("display", "inline");
   } else {
     $('#websocket_status').html('Web socket connection status: N/A');
@@ -691,14 +702,14 @@ function drawRoutes() {
 
   if (g_first === 0) {
     if (state.checkboxes[0]) {
-      drawRoute(g_shortestRoute, '2px #000');
+      drawRoute(g_shortestRoute, '2px #E08547');
     }
   } else if (g_first === 1) {
     if (state.checkboxes[0]) {
-      drawRoute(g_shortestRoute, '2px #000');
+      drawRoute(g_shortestRoute, '2px #E08547');
     }
     if (state.checkboxes[1]) {
-      drawRoute(g_2ndShortestRoute, '6px #00ff00');
+      drawRoute(g_2ndShortestRoute, '6px #ff0000');
     }
   }
 
@@ -731,7 +742,7 @@ function funcRound(luku) //rounds to 2 decimal precision
 
 function displayInitTextsOnCanvas() {
   if (!g_displayed_text) {
-    var obj = new textParamsObject("Click this area to add node!");
+    var obj = new textParamsObject("Presiona en esta área para añadir un nodo");
     g_displayed_text = displayTextOnCanvas(obj, 2500, true);
   }
   if (!g_displayed_instructions) {
@@ -802,7 +813,7 @@ function hashChanged() {
   }
 
   if (coords.length > g_maxNodeCount) {
-    var obj = new textParamsObject("Maximum count of nodes reached!");
+    var obj = new textParamsObject("Se permite un máximo de 9 nodos");
     displayTextOnCanvas(obj, 2500);
     return;
   } else if (coords.length > 0) {
@@ -836,31 +847,56 @@ function createNewEllipse(x, y, id) {
   var radius = arguments.length <= 3 || arguments[3] === undefined ? g_canvasNodeRadius : arguments[3];
   var fill = arguments.length <= 4 || arguments[4] === undefined ? g_canvasNodeFill : arguments[4];
 
-  return g_canvas.display.ellipse({
-    x: x,
-    y: y,
-    radius: radius,
-    fill: fill,
-    model_id: id
-  });
+  return {
+      meta: {
+        x: x, 
+        y: y, 
+        id: id
+      },
+      ellipse: g_canvas.display.ellipse({
+        x: x,
+        y: y,
+        radius: radius,
+        fill: fill,
+        model_id: id,
+        zIndex: "back"
+      })
+  };
 }
 
-function addEllipseOnCanvas(ellipse) {
+function addEllipseOnCanvas(o) {
   var dragOptions = { changeZindex: true, bubble: false };
 
-  g_canvas.addChild(ellipse);
-  ellipse.dragAndDrop(dragOptions);
-  ellipse.bind("dblclick", removeCanvasNode);
-  ellipse.bind("mouseenter", mouseEnter);
-  ellipse.bind("mouseleave", mouseLeave);
-  ellipse.bind("mousedown", mouseDown);
-  ellipse.bind("mouseup", mouseUp);
+  g_canvas.addChild(o.ellipse);
+  o.ellipse.dragAndDrop(dragOptions);
+  o.ellipse.bind("dblclick", removeCanvasNode);
+  o.ellipse.bind("mouseenter", mouseEnter);
+  o.ellipse.bind("mouseleave", mouseLeave);
+  o.ellipse.bind("mousedown", mouseDown);
+  o.ellipse.bind("mouseup", mouseUp);
 
-  ellipse.bind("dbltap", removeCanvasNode);
-  ellipse.bind("touchenter", mouseEnter);
-  ellipse.bind("touchleave", mouseLeave);
-  ellipse.bind("touchstart", mouseDown);
-  ellipse.bind("touchend", mouseUp);
+  o.ellipse.bind("dbltap", removeCanvasNode);
+  o.ellipse.bind("touchenter", mouseEnter);
+  o.ellipse.bind("touchleave", mouseLeave);
+  o.ellipse.bind("touchstart", mouseDown);
+  o.ellipse.bind("touchend", mouseUp);
+
+  //addTextOnEllipse(o.ellipse, o.meta.id);
+}
+
+function addTextOnEllipse(target, id){
+  var half_radius = g_canvasNodeRadius*0.5*-1;
+
+  var ellipse_text = g_canvas.display.text({
+    x: half_radius,
+    y: half_radius,
+    size: g_canvasNodeRadius+1,
+    fill: "#000",
+    text: id,
+    zIndex: "front"
+  });
+
+  target.addChild(ellipse_text);
 }
 
 function idHandler() {
