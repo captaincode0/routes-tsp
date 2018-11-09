@@ -20,12 +20,19 @@ var g_RCOORDS = []; //React
 var g_RPATHS = []; //React
 var g_canvas;
 var RInst; //React instance
-var g_instructions = "Resolvedor de rutas\nInstrucciones:\n\nUn solo clic añade un nodo.\nDos clics elimiman un nodo.\nMantener presionado y arrastrar para reposicionar.\nLos nodos pueden ser movidos y editados por las coordenadas manualmente.\nEl área visible es de 700x700 pixeles.\nLos nodos máximos que se pueden agregar son 9.";
+var g_instructions = "Resolvedor de rutas\nInstrucciones:\n\nUn solo clic añade un nodo.\nDos clics seleccionan el nodo a recorrer.\nMantener presionado y arrastrar para reposicionar.\nLos nodos pueden ser movidos y editados por las coordenadas manualmente.\nEl área visible es de 700x700 pixeles.\nLos nodos máximos que se pueden agregar son 9.";
 var g_client_side_path_calculation;
 
 var g_store;
 var g_id_store;
 var g_node_count;
+
+var g_lastEllipse;
+var touchedOneEllipse = false;
+var g_extraCoordsTable = [];
+var g_selectedEllipse = {x:0, y:0};
+
+const AMPLIFICATION_FACTOR = 0.0499999;
 
 // message sending intervals in milliseconds
 // more nodes --> longer path calculation duration --> more time between msgs needed
@@ -34,7 +41,7 @@ var MSG_SEND_INTERVAL_MIDDLE = 500;
 var MSG_SEND_INTERVAL_HIGH = 1000;
 
 var CANVAS_DIMENSION_PXLS = 700;
-var DEFAULT_WS_ADDRESS = "wss://"+document.location.host+"/tsp";
+var DEFAULT_WS_ADDRESS = (document.location.protocol==="https")?"wss://":"ws://"+document.location.host+"/tsp";
 
 var CB_ID_1 = 0; // checkbox identifier
 var CB_ID_2 = 1; // checkbox identifier
@@ -265,7 +272,7 @@ function init() {
           "div",
           { className: klass, id: "rcoordslist", key: item.id, onMouseLeave: this.handleOnMouseLeave.bind(this, item.id), onMouseEnter: this.handleOnMouseEnter.bind(this, item.id) },
           React.createElement("b", {}, item.id+". "),
-          React.createElement("input", {type: "text", placeholder: "Cliente "+item.id, className: "client-input"}),
+          React.createElement("input", {type: "text", placeholder: "Lugar "+item.id, className: "client-input"}),
           React.createElement("input", { type: "text", onChange: this.handleOnChangeX.bind(this, item.id), value: item.x }),
           React.createElement("input", { type: "text", onChange: this.handleOnChangeY.bind(this, item.id), value: item.y }),
           React.createElement("a", { className: "destroy", onClick: this.handleOnClick.bind(this, item.id) })
@@ -314,6 +321,8 @@ function init() {
 
   g_canvas.bind("mousedown", addCanvasNodeMouse);
   //g_canvas.bind("mouseup", mouseUp);
+
+  //g_canvas.bind("dblclick", addCanvasClick);
 
   g_canvas.bind("touchstart", addCanvasNodeTouch);
   //g_canvas.bind("touchend", mouseUp);
@@ -429,6 +438,35 @@ function mouseUp() {
   g_store.dispatch(changeXY(this.model_id, Math.round(this.abs_x), Math.round(this.abs_y)));
 }
 
+function mouseClick(){
+  console.log("Mouse Click");
+  console.log(g_coords_table);
+  console.log(touchedOneEllipse);
+
+  console.table([this.x, this.y]);
+  console.table((g_lastEllipse)?[g_lastEllipse.x, g_lastEllipse.y]:[0,0]);
+
+  if(g_lastEllipse !== undefined 
+      && g_lastEllipse.abs_x !== this.abs_x
+      && g_lastEllipse.abs_y !== this.abs_y){
+    //g_extraCoordsTable.push([g_lastEllipse.x, g_lastEllipse.y, 1]);
+    g_extraCoordsTable.push([this.x, this.y, 1]);
+  }
+
+  // if(!touchedOneEllipse){
+  //     g_lastEllipse = this;
+  //     touchedOneEllipse = true;
+  // }else if(g_lastEllipse !== this){
+  //     g_extraCoordsTable.push([this.x, this.y, 1]);
+  //     g_extraCoordsTable.push([g_lastEllipse.x, g_lastEllipse.y, 1]);
+  //     touchedOneEllipse = false;
+  // }
+
+  g_store.dispatch(changeXY(this.model_id, Math.round(this.abs_x), Math.round(this.abs_y)));
+
+  g_lastEllipse = this;
+}
+
 function removeCanvasNode() {
   removeLinesFromCanvas();
   if (this.model_id) {
@@ -491,7 +529,7 @@ function mouseLeave() {
 function coordsHandler() {
   var frag_id_string = "";
 
-  drawRoutes();
+  //drawRoutes();
 
   //take a copy of current global coords table
   g_coords_table_prev = g_coords_table.slice();
@@ -501,12 +539,20 @@ function coordsHandler() {
   var state = g_store.getState();
   g_node_count = state.nodes.length;
 
+  console.log(g_node_count);
+
   //copy coords from current state to global coords table
   for (var index = 0; index < state.nodes.length; index++) {
-    g_coords_table.push(state.nodes[index].x);
-    g_coords_table.push(state.nodes[index].y);
+    g_coords_table.push([state.nodes[index].x, state.nodes[index].y]);
     frag_id_string += state.nodes[index].x + "," + state.nodes[index].y + ",";
   }
+
+  g_coords_table = g_coords_table.concat(g_extraCoordsTable);
+
+  if(g_selectedEllipse.selected){
+    g_coords_table.push([g_selectedEllipse.x, g_selectedEllipse.y]);
+  }
+
   //note that coords are in one dimensional table => 1 xy pair of coords takes 2 slots from the table
 
   history.replaceState(undefined, undefined, "#" + frag_id_string);
@@ -538,10 +584,20 @@ function coordsHandler() {
   if (g_coords_table.length === 0) {
     displayInitTextsOnCanvas();
   }
+
+  if(g_node_count > 1)
+    drawGraph();
 }
 
 function drawRoute(array, stroke_params) {
+  var half_radius = g_canvasNodeRadius*0.5+1;
+  var middle_point = {x:0, y:0};
+  var first_point, second_point;
+
   for (var index = 0; index < array.length - 1; index++) {
+    // if(array[index+1] === 1){
+    //   index++;
+    // }
 
     var line = g_canvas.display.line({
       start: { x: array[index][0], y: array[index][1] },
@@ -550,8 +606,29 @@ function drawRoute(array, stroke_params) {
       cap: "round"
     });
 
+    middle_point.x = (array[index][0]+array[index + 1][0])*0.5;
+    middle_point.y = (array[index][1]+array[index + 1][1])*0.5;
+
+    var distance = parseFloat(calculateDistance(array[index], array[index+1])*AMPLIFICATION_FACTOR).toFixed(2);
+
+    var line_text = g_canvas.display.text({ 
+      size: g_canvasNodeRadius+1,
+      x: middle_point.x,
+      y: middle_point.y,
+      fill: "#000000",
+      zIndex: "front",
+      text: distance
+    });
+
+    /*
+      Every 10 pixels is one kilometer (0.1 factor)
+      Every 20 pixels is one kilometer (0.2 factor or 0.05)
+    */
+
     g_canvas.addChild(line);
     g_canvas.children[g_canvas.children.length - 1].zIndex = "back";
+
+    g_canvas.addChild(line_text);
   }
 }
 
@@ -650,13 +727,21 @@ function checkWebSocketState() {
 }
 
 function sendMessage(coords_table) {
-  if (g_client_side_path_calculation) {
-    messageReceived(permutateRoutesAndFindShortest(coords_table), true);
-  } else {
-    if (g_web_socket.readyState === 1) {
-      g_web_socket.send(JSON.stringify(coords_table));
-    }
-  }
+
+  // if (g_client_side_path_calculation) {
+  //   messageReceived(permutateRoutesAndFindShortest(coords_table), true);
+  // } else {
+  //   if (g_web_socket.readyState === 1) {
+  //     g_web_socket.send(JSON.stringify(coords_table));
+  //   }
+  // }
+}
+
+function drawGraph(){
+  removeLinesFromCanvas();
+  drawRoute(g_coords_table, "'2px #E08547'");
+  g_canvas.redraw();
+  callReactRefPaths();
 }
 
 function messageReceived(evt, flag) {
@@ -709,7 +794,7 @@ function drawRoutes() {
       drawRoute(g_shortestRoute, '2px #E08547');
     }
     if (state.checkboxes[1]) {
-      drawRoute(g_2ndShortestRoute, '6px #ff0000');
+      drawRoute(g_2ndShortestRoute, '4px #ff0000');
     }
   }
 
@@ -841,6 +926,10 @@ function clearAll() {
   removeInitTextsFromCanvas();
   g_shortestRoute.length = 0;
   g_2ndShortestRoute.length = 0;
+  g_selectedEllipse = {x:0, y:0, selected: false};
+  g_extraCoordsTable = [];
+  g_lastEllipse = null;
+  touchedOneEllipse = false;
 }
 
 function createNewEllipse(x, y, id) {
@@ -857,7 +946,7 @@ function createNewEllipse(x, y, id) {
         x: x,
         y: y,
         radius: radius,
-        fill: fill,
+        fill: g_canvasNodeFill,
         model_id: id,
         zIndex: "back"
       })
@@ -869,19 +958,44 @@ function addEllipseOnCanvas(o) {
 
   g_canvas.addChild(o.ellipse);
   o.ellipse.dragAndDrop(dragOptions);
-  o.ellipse.bind("dblclick", removeCanvasNode);
+
+  o.ellipse.bind("dblclick", selectCanvasNode);
+  //o.ellipse.bind("click", mouseClick);
   o.ellipse.bind("mouseenter", mouseEnter);
   o.ellipse.bind("mouseleave", mouseLeave);
   o.ellipse.bind("mousedown", mouseDown);
   o.ellipse.bind("mouseup", mouseUp);
 
-  o.ellipse.bind("dbltap", removeCanvasNode);
+  o.ellipse.bind("dbltap", selectCanvasNode);
   o.ellipse.bind("touchenter", mouseEnter);
   o.ellipse.bind("touchleave", mouseLeave);
   o.ellipse.bind("touchstart", mouseDown);
   o.ellipse.bind("touchend", mouseUp);
 
+  //touchedOneEllipse = false;
+
   //addTextOnEllipse(o.ellipse, o.meta.id);
+}
+
+function selectCanvasNode(){
+  var canvas_element;
+
+  for(var index = 0; index<g_canvas.children.length; index++){
+    canvas_element = g_canvas.children[index];
+
+    if(canvas_element.type === "ellipse"
+      && canvas_element.model_id != this.model_id){
+      canvas_element.fill = g_canvasNodeFill;
+    }else if(canvas_element.type === "ellipse"
+      && canvas_element.model_id === this.model_id)
+      canvas_element.fill = "#000000";
+
+    if(index === g_canvas.children.length-1){
+      g_canvas.redraw();
+    }
+  }
+
+  g_selectedEllipse = {x: this.x, y: this.y, selected: true};
 }
 
 function addTextOnEllipse(target, id){
@@ -891,7 +1005,7 @@ function addTextOnEllipse(target, id){
     x: half_radius,
     y: half_radius,
     size: g_canvasNodeRadius+1,
-    fill: "#000",
+    fill: "#ffffff",
     text: id,
     zIndex: "front"
   });
