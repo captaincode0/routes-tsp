@@ -2,6 +2,10 @@
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
+/**
+ * Global Variables
+ */
+
 var g_maxNodeCount = 9;
 var g_coords_table = [];
 var g_coords_table_prev = [];
@@ -32,29 +36,43 @@ var touchedOneEllipse = false;
 var g_extraCoordsTable = [];
 var g_selectedEllipse = {x:0, y:0};
 
+/**
+ * Global Constants
+ */
+
 const AMPLIFICATION_FACTOR = 0.0499999;
 
 // message sending intervals in milliseconds
 // more nodes --> longer path calculation duration --> more time between msgs needed
-var MSG_SEND_INTERVAL_LOW = 300;
-var MSG_SEND_INTERVAL_MIDDLE = 500;
-var MSG_SEND_INTERVAL_HIGH = 1000;
+const MSG_SEND_INTERVAL_LOW = 300;
+const MSG_SEND_INTERVAL_MIDDLE = 500;
+const MSG_SEND_INTERVAL_HIGH = 1000;
 
-var CANVAS_DIMENSION_PXLS = 700;
-var DEFAULT_WS_ADDRESS = (document.location.protocol==="https")?"wss://":"ws://"+document.location.host+"/tsp";
+const CANVAS_DIMENSION_PXLS = 700;
+const DEFAULT_WS_ADDRESS = (document.location.protocol==="https")?"wss://":"ws://"+document.location.host+"/tsp";
 
-var CB_ID_1 = 0; // checkbox identifier
-var CB_ID_2 = 1; // checkbox identifier
+const CB_ID_1 = 0; // checkbox identifier
+const CB_ID_2 = 1; // checkbox identifier
 
-//Redux reducer definitions BEGIN
-var ADD_NODE = 'ADD_NODE';
-var REMOVE_NODE = 'REMOVE_NODE';
-var REMOVE_ALL_NODES = 'REMOVE_ALL_NODES';
-var CHANGE_X = 'CHANGE_X';
-var CHANGE_Y = 'CHANGE_Y';
-var CHANGE_XY = 'CHANGE_XY';
-var TOGGLE_1 = 'TOGGLE_1';
-var TOGGLE_2 = 'TOGGLE_2';
+const MIDDLE_SCREEN_X = 350;
+const MIDDLE_SCREEN_Y = 350;
+
+/**
+ * Redux reducer patterns
+ */
+const ADD_NODE = 'ADD_NODE';
+const REMOVE_NODE = 'REMOVE_NODE';
+const REMOVE_ALL_NODES = 'REMOVE_ALL_NODES';
+const CHANGE_X = 'CHANGE_X';
+const CHANGE_Y = 'CHANGE_Y';
+const CHANGE_DISTANCE = "CHANGE_DISTANCE";
+const CHANGE_XY = 'CHANGE_XY';
+const TOGGLE_1 = 'TOGGLE_1';
+const TOGGLE_2 = 'TOGGLE_2';
+
+/**
+ * Redux operations
+ */
 
 function addNode(x, y, id) {
   return { type: ADD_NODE, x: x, y: y, id: id };
@@ -88,10 +106,18 @@ function toggle_2() {
   return { type: TOGGLE_2 };
 }
 
+function changeDistance(id, value){
+  return { type: CHANGE_DISTANCE, id: id, value: value };
+}
+
 var initialState = {
   nodes: [],
   checkboxes: [true, false]
 };
+
+/**
+ * Solver Application
+ */
 
 function solverApp() {
   var state = arguments.length <= 0 || arguments[0] === undefined ? initialState : arguments[0];
@@ -107,23 +133,33 @@ function solverApp() {
 
   function func_change_X(node) {
     if (node.id === action.id) {
-      return { x: action.value, y: node.y, id: node.id };
+      return { x: action.value, y: node.y, id: node.id, distance: action.distance};
     }
-    return { x: node.x, y: node.y, id: node.id };
+    return { x: node.x, y: node.y, id: node.id, distance: node.distance};
   }
 
   function func_change_Y(node) {
     if (node.id === action.id) {
-      return { x: node.x, y: action.value, id: node.id };
+      return { x: node.x, y: action.value, id: node.id, distance: action.distance};
     }
-    return { x: node.x, y: node.y, id: node.id };
+
+    return { x: node.x, y: node.y, id: node.id, distance: node.distance};
   }
 
   function func_change_XY(node) {
     if (node.id === action.id) {
-      return { x: action.xvalue, y: action.yvalue, id: node.id };
+      return { x: action.xvalue, y: action.yvalue, id: node.id, distance: action.distance};
     }
-    return { x: node.x, y: node.y, id: node.id };
+    return { x: node.x, y: node.y, id: node.id, distance: node.distance};
+  }
+
+  function func_change_distance(node){
+    if(node.id === action.id){
+      return { x: action.xvalue, id: action.yvalue, id: node.id, distance: action.value};
+    }
+
+    console.log({ x: node.x, y: node.y, id: node.id, distance: node.distance});
+    return { x: node.x, y: node.y, id: node.id, distance: node.distance};
   }
 
   switch (action.type) {
@@ -133,7 +169,8 @@ function solverApp() {
         nodes: [].concat(_toConsumableArray(state.nodes), [{
           x: action.x,
           y: action.y,
-          id: action.id
+          id: action.id,
+          distance: action.distance
         }])
       });
 
@@ -152,6 +189,9 @@ function solverApp() {
     case CHANGE_XY:
       return Object.assign({}, { nodes: state.nodes.map(func_change_XY) }, { checkboxes: state.checkboxes });
 
+    case CHANGE_DISTANCE:
+      return Object.assign({}, { nodes: state.nodes.map(func_change_distance)}, {checkboxes: state.checkboxes});
+
     case TOGGLE_1:
       return Object.assign({}, { nodes: state.nodes }, { checkboxes: [state.checkboxes[0] ? false : true, state.checkboxes[1]] });
 
@@ -162,7 +202,10 @@ function solverApp() {
       return state;
   }
 }
-//Redux reducer definitions END
+
+/**
+ * Application boot
+ */
 
 function init() {
 
@@ -223,7 +266,32 @@ function init() {
 
   var RCoordsList = React.createClass({
     displayName: "RCoordsList",
+    changeDistanceToNextNode(item, event){
+      var distance = Number(event.target.value)/AMPLIFICATION_FACTOR;
+      var next_node, pending, new_coords, isInverted;
 
+      for(var index = 0; index < g_canvas.children.length-1; index++){
+        if(g_canvas.children[index].model_id === (item.id+1)){
+          next_node = g_canvas.children[index];
+          pending = calculatePendingFromNode(item, next_node);
+          isInverted = (next_node.x < item.x && (next_node.y < item.y || next_node.y > item.y));
+
+          //set new coords to one node from distance and pending
+          new_coords = setNewCoordsFromDistance(
+            item, 
+            distance, 
+            pending,
+            isInverted
+          ); 
+
+          //g_store.dispatch(changeDistance(item.id, distance_to_next_node*AMPLIFICATION_FACTOR));
+          g_store.dispatch(changeXY(next_node.model_id, new_coords.x, new_coords.y));
+
+          next_node.moveTo(new_coords.x, new_coords.y);
+          break;
+        }
+      }
+    },
     handleOnClick: function handleOnClick(id, event) {
       removeCanvasChildById(id);
       g_store.dispatch(removeNode(id));
@@ -265,6 +333,7 @@ function init() {
     render: function render() {
       var createItem = function (item) {
         var klass = '';
+
         if (item.id === this.props.active) {
           klass = 'r_invert_colors';
         }
@@ -275,6 +344,7 @@ function init() {
           React.createElement("input", {type: "text", placeholder: "Lugar "+item.id, className: "client-input"}),
           React.createElement("input", { type: "text", onChange: this.handleOnChangeX.bind(this, item.id), value: item.x }),
           React.createElement("input", { type: "text", onChange: this.handleOnChangeY.bind(this, item.id), value: item.y }),
+          React.createElement("input", { type: "text", value: item.distance, disabled: (item.id == 9)?true:false, onChange: this.changeDistanceToNextNode.bind(this, item)}),
           React.createElement("a", { className: "destroy", onClick: this.handleOnClick.bind(this, item.id) })
         );
       }.bind(this);
@@ -539,19 +609,20 @@ function coordsHandler() {
   var state = g_store.getState();
   g_node_count = state.nodes.length;
 
-  console.log(g_node_count);
-
   //copy coords from current state to global coords table
   for (var index = 0; index < state.nodes.length; index++) {
     g_coords_table.push([state.nodes[index].x, state.nodes[index].y]);
     frag_id_string += state.nodes[index].x + "," + state.nodes[index].y + ",";
+
+    // if(index == state.nodes.length-1)
+    //   g_coords_table.push([state.nodes[0].x, state.nodes[0].y])
   }
 
-  g_coords_table = g_coords_table.concat(g_extraCoordsTable);
+  //g_coords_table = g_coords_table.concat(g_extraCoordsTable);
 
-  if(g_selectedEllipse.selected){
-    g_coords_table.push([g_selectedEllipse.x, g_selectedEllipse.y]);
-  }
+  // if(g_selectedEllipse.selected){
+  //   g_coords_table.push([g_selectedEllipse.x, g_selectedEllipse.y]);
+  // }
 
   //note that coords are in one dimensional table => 1 xy pair of coords takes 2 slots from the table
 
@@ -649,6 +720,33 @@ function calculateDistance(coords_1, coords_2) {
   var delta_x = coords_1[0] - coords_2[0];
   var delta_y = coords_1[1] - coords_2[1];
   return Math.sqrt(Math.pow(delta_x, 2) + Math.pow(delta_y, 2));
+}
+
+function calculateDistanceFromNode(node1, node2){
+  var delta_x = node1.x - node2.x;
+  var delta_y = node1.y - node2.y;
+
+  return Math.sqrt(Math.pow(delta_x, 2) + Math.pow(delta_y, 2));
+}
+
+function calculatePendingFromNode(node1, node2){
+  return ((node2.y-node1.y)/(node2.x-node1.x));
+}
+
+function setNewCoordsFromDistance(node, distance, pending, isInverted){
+  var angle = Math.atan(pending);
+  var delta_x = Math.cos(angle) * distance;
+  var delta_y = Math.sin(angle) * distance;
+
+  if(isInverted){
+    delta_x *= -1;
+    delta_y *= -1;
+  }
+
+  return {
+    x: (node.x + delta_x),
+    y: (node.y + delta_y)
+  };
 }
 
 function removeLinesFromCanvas() {
@@ -995,7 +1093,7 @@ function selectCanvasNode(){
     }
   }
 
-  g_selectedEllipse = {x: this.x, y: this.y, selected: true};
+  //g_selectedEllipse = {x: this.x, y: this.y, selected: true};
 }
 
 function addTextOnEllipse(target, id){
