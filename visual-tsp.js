@@ -49,7 +49,7 @@ const MSG_SEND_INTERVAL_MIDDLE = 500;
 const MSG_SEND_INTERVAL_HIGH = 1000;
 
 const CANVAS_DIMENSION_PXLS = 700;
-const DEFAULT_WS_ADDRESS = (document.location.protocol==="https")?"wss://":"ws://"+document.location.host+"/tsp";
+const DEFAULT_WS_ADDRESS = (document.location.protocol==="https:")?"wss://":"ws://"+document.location.host+"/tsp";
 
 const CB_ID_1 = 0; // checkbox identifier
 const CB_ID_2 = 1; // checkbox identifier
