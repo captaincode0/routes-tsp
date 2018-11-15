@@ -6,7 +6,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
  * Global Variables
  */
 
-var g_maxNodeCount = 9;
+var g_maxNodeCount = 12;
 var g_coords_table = [];
 var g_coords_table_prev = [];
 var g_interval_handle_stack = [];
@@ -24,7 +24,7 @@ var g_RCOORDS = []; //React
 var g_RPATHS = []; //React
 var g_canvas;
 var RInst; //React instance
-var g_instructions = "Resolvedor de rutas\nInstrucciones:\n\nUn solo clic añade un nodo.\nDos clics seleccionan el nodo a recorrer.\nMantener presionado y arrastrar para reposicionar.\nLos nodos pueden ser movidos y editados por las coordenadas manualmente.\nEl área visible es de 700x700 pixeles.\nLos nodos máximos que se pueden agregar son 9.";
+var g_instructions = "Resolvedor de rutas\nInstrucciones:\n\nUn solo clic añade un nodo.\nDos clics seleccionan el nodo a recorrer.\nMantener presionado y arrastrar para reposicionar.\nLos nodos pueden ser movidos y editados por las coordenadas manualmente.\nEl área visible es de 700x700 pixeles.\nLos nodos máximos que se pueden agregar son 12.";
 var g_client_side_path_calculation;
 
 var g_store;
@@ -250,7 +250,7 @@ function init() {
               "span",
               { id: "rpathlen", className: klass },
               ", length: ",
-              funcRound(item.length)
+              parseFloat(item.length*AMPLIFICATION_FACTOR).toFixed(2)
             )
           )
         );
@@ -344,7 +344,7 @@ function init() {
           React.createElement("input", {type: "text", placeholder: "Lugar "+item.id, className: "client-input"}),
           React.createElement("input", { type: "text", onChange: this.handleOnChangeX.bind(this, item.id), value: item.x }),
           React.createElement("input", { type: "text", onChange: this.handleOnChangeY.bind(this, item.id), value: item.y }),
-          React.createElement("input", { type: "text", value: item.distance, disabled: (item.id == 9)?true:false, onChange: this.changeDistanceToNextNode.bind(this, item)}),
+          React.createElement("input", { type: "text", value: item.distance, disabled: (item.id == g_maxNodeCount)?true:false, onChange: this.changeDistanceToNextNode.bind(this, item)}),
           React.createElement("a", { className: "destroy", onClick: this.handleOnClick.bind(this, item.id) })
         );
       }.bind(this);
@@ -440,7 +440,7 @@ function callReactRefPaths() {
 
 function addCanvasNodeTouch() {
   if (g_node_count > g_maxNodeCount - 1) {
-    var obj = new textParamsObject("Se permite un máximo de 9 nodos");
+    var obj = new textParamsObject("Se permite un máximo de 12 nodos");
     displayTextOnCanvas(obj, 2500);
     return;
   }
@@ -458,7 +458,7 @@ function addCanvasNodeTouch() {
 
 function addCanvasNodeMouse() {
   if (g_node_count > g_maxNodeCount - 1) {
-    var obj = new textParamsObject("Se permite un máximo de 9 nodos");
+    var obj = new textParamsObject("Se permite un máximo de 12 nodos");
     displayTextOnCanvas(obj, 2500);
     return;
   }
@@ -599,7 +599,7 @@ function mouseLeave() {
 function coordsHandler() {
   var frag_id_string = "";
 
-  //drawRoutes();
+  //drawRoute(g_shortestRoute, '4px #ff0000');
 
   //take a copy of current global coords table
   g_coords_table_prev = g_coords_table.slice();
@@ -614,8 +614,9 @@ function coordsHandler() {
     g_coords_table.push([state.nodes[index].x, state.nodes[index].y]);
     frag_id_string += state.nodes[index].x + "," + state.nodes[index].y + ",";
 
-    // if(index == state.nodes.length-1)
+    // if(index == state.nodes.length-1){
     //   g_coords_table.push([state.nodes[0].x, state.nodes[0].y])
+    // }
   }
 
   //g_coords_table = g_coords_table.concat(g_extraCoordsTable);
@@ -833,6 +834,10 @@ function sendMessage(coords_table) {
   //     g_web_socket.send(JSON.stringify(coords_table));
   //   }
   // }
+  
+  if(g_web_socket.readyState === 1){
+    g_web_socket.send(JSON.stringify(coords_table));
+  }
 }
 
 function drawGraph(){
@@ -842,40 +847,50 @@ function drawGraph(){
   callReactRefPaths();
 }
 
-function messageReceived(evt, flag) {
-  var array;
+function messageReceived(evt) {
+  // var array;
 
-  if (flag) //client side permutation and shortest route finding
-    {
-      if (!evt) {
-        return;
-      }
-      array = JSON.parse(evt);
-    } else //server side permutation and shortest route finding
-    {
-      if (evt.data == 0) {
-        return;
-      }
-      array = JSON.parse(evt.data);
-    }
+  // if (flag) //client side permutation and shortest route finding
+  //   {
+  //     if (!evt) {
+  //       return;
+  //     }
+  //     array = JSON.parse(evt);
+  //   } else //server side permutation and shortest route finding
+  //   {
+  //     if (evt.data == 0) {
+  //       return;
+  //     }
+  //     array = JSON.parse(evt.data);
+  //   }
+
+  // removeLinesFromCanvas();
+
+  // g_first = array.shift();
+  // var length;
+
+  // if (g_first === 0) //received array contains only shortest path
+  //   {
+  //     length = array.length;
+  //     g_shortestRoute = array.slice();
+  //   } else if (g_first === 1) //received array contains both shortest and 2nd shortest paths
+  //   {
+  //     length = array.length;
+  //     g_shortestRoute = array.slice(0, length / 2);
+  //     g_2ndShortestRoute = array.slice(length / 2);
+  //   }
+
+  if(!evt)
+      return;
 
   removeLinesFromCanvas();
 
-  g_first = array.shift();
-  var length;
+  g_shortestRoute = JSON.parse(evt.data);
 
-  if (g_first === 0) //received array contains only shortest path
-    {
-      length = array.length;
-      g_shortestRoute = array.slice();
-    } else if (g_first === 1) //received array contains both shortest and 2nd shortest paths
-    {
-      length = array.length;
-      g_shortestRoute = array.slice(0, length / 2);
-      g_2ndShortestRoute = array.slice(length / 2);
-    }
+  drawRoute(g_coords_table, '2px #E08547');
+  drawRoute(g_shortestRoute, '4px #ff0000');
 
-  coordsHandler();
+  //coordsHandler();
 }
 
 function drawRoutes() {
@@ -996,7 +1011,7 @@ function hashChanged() {
   }
 
   if (coords.length > g_maxNodeCount) {
-    var obj = new textParamsObject("Se permite un máximo de 9 nodos");
+    var obj = new textParamsObject("Se permite un máximo de 12 nodos");
     displayTextOnCanvas(obj, 2500);
     return;
   } else if (coords.length > 0) {
